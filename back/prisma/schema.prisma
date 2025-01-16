@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  Disponível
+  Emprestado
+}
+
+enum BorrowStatus {
+  EmAndamento
+  Devolvido
+  Atrasado
+}
+
+model Equipment { 
+  id               Int      @id @default(autoincrement())
+  name             String
+  description      String?
+  status           Status
+  acquisition_date DateTime
+  borrows          Borrow[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Person {
+  id          Int      @id @default(autoincrement())
+  name        String
+  phoneNumber String
+  address     Address  @relation(fields: [addressId], references: [id])
+  addressId   Int      @unique
+  borrows     Borrow[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Address {
+  id            Int      @id @default(autoincrement())
+  city          String
+  neighborhood  String
+  zipCode       String
+  street        String
+  number        String
+  person        Person?  @relation
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Borrow {
+  id                 Int          @id @default(autoincrement())
+  personId           Int 
+  equipmentId        Int          
+  borrowDate         DateTime
+  expectedReturnDate DateTime
+  actualReturnDate   DateTime?
+  status             BorrowStatus @default(EmAndamento)
+
+  person    Person    @relation(fields: [personId], references: [id])
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

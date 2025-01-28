@@ -24,12 +24,21 @@ enum BorrowStatus {
   Atrasado
 }
 
+model User {
+  id Int @id @default(autoincrement())
+
+  email    String @unique
+  password String
+
+  name String
+}
+
 model Equipment { 
   id               Int      @id @default(autoincrement())
   name             String
   description      String?
   status           Status
-  acquisition_date DateTime
+  acquisitionDate DateTime
   borrows          Borrow[]
 
   createdAt        DateTime @default(now())

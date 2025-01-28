@@ -1,26 +1,138 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { CreateBorrowDto } from "./dto/create-borrow.dto";
 import { UpdateBorrowDto } from "./dto/update-borrow.dto";
+import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class BorrowService {
-  create(createBorrowDto: CreateBorrowDto) {
-    return "This action adds a new borrow";
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createBorrowDto: CreateBorrowDto) {
+    try {
+      return await this.prisma.$transaction(async prisma => {
+        // Verificar se o equipamento existe
+        const equipment = await prisma.equipment.findUnique({
+          where: { id: createBorrowDto.equipmentId },
+        });
+
+        if (!equipment) {
+          throw new NotFoundException("Equipamento não encontrado.");
+        }
+
+        if (equipment.status === "Emprestado") {
+          throw new BadRequestException("Equipamento já está emprestado.");
+        }
+
+        // Atualizar status do equipamento
+        await prisma.equipment.update({
+          where: { id: createBorrowDto.equipmentId },
+          data: { status: "Emprestado" },
+        });
+
+        // Criar empréstimo
+        return prisma.borrow.create({
+          data: {
+            ...createBorrowDto,
+            status: "EmAndamento",
+          },
+          include: {
+            person: true,
+            equipment: true,
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error; // Re-lançar as exceções específicas
+      }
+      throw new BadRequestException("Erro ao criar o empréstimo. Verifique os dados fornecidos.");
+    }
   }
 
-  findAll() {
-    return `This action returns all borrow`;
+  async findAll() {
+    try {
+      return await this.prisma.borrow.findMany({
+        include: { person: true, equipment: true },
+      });
+    } catch {
+      throw new BadRequestException("Erro ao buscar os empréstimos.");
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} borrow`;
+  async findOne(id: number) {
+    try {
+      const borrow = await this.prisma.borrow.findUnique({
+        where: { id },
+        include: { person: true, equipment: true },
+      });
+
+      if (!borrow) {
+        throw new NotFoundException("Empréstimo não encontrado.");
+      }
+
+      return borrow;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new BadRequestException("Erro ao buscar o empréstimo.");
+    }
   }
 
-  update(id: number, updateBorrowDto: UpdateBorrowDto) {
-    return `This action updates a #${id} borrow`;
+  async update(id: number, updateBorrowDto: UpdateBorrowDto) {
+    try {
+      // Verificar se o empréstimo existe
+      const borrow = await this.prisma.borrow.findUnique({ where: { id } });
+
+      if (!borrow) {
+        throw new NotFoundException("Empréstimo não encontrado.");
+      }
+
+      return await this.prisma.borrow.update({
+        where: { id },
+        data: {
+          ...updateBorrowDto,
+        },
+        include: {
+          person: true,
+          equipment: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException("Erro ao atualizar o empréstimo.");
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} borrow`;
+  async remove(id: number) {
+    try {
+      // Verificar se o empréstimo existe
+      const borrow = await this.prisma.borrow.findUnique({ where: { id } });
+
+      if (!borrow) {
+        throw new NotFoundException("Empréstimo não encontrado.");
+      }
+
+      // Atualizar status do equipamento para "Disponível"
+      await this.prisma.$transaction(async prisma => {
+        await prisma.equipment.update({
+          where: { id: borrow.equipmentId },
+          data: { status: "Disponível" },
+        });
+
+        // Excluir o empréstimo
+        await prisma.borrow.delete({ where: { id } });
+      });
+
+      return { message: "Empréstimo removido com sucesso." };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException("Erro ao remover o empréstimo.");
+    }
   }
 }

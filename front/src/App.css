@@ -36,3 +36,15 @@
     transform: rotate(360deg);
   }
 }
+
+/*lucas */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+}

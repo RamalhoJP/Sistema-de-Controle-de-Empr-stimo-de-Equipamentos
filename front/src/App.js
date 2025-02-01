@@ -1,25 +1,35 @@
-import logo from './logo.svg';
 import './App.css';
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import Navbar from "./components/Navbar/Navbar";
+import Footer from './components/Footer/Footer'
+// rotas
+import Emprestimo from './pages/Emprestimo/Emprestimo';
+import Equipamento from './pages/Equipamento/Equipamento'
+import Cliente from './pages/Cliente/Cliente';
+import Login from './pages/Login/Login'
+
+
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+  const headers = ['ID', 'Nome', 'Idade'];
+  const data = [
+    { id: 1, name: 'Alice', age: 25 },
+    { id: 2, name: 'Bob', age: 30 },
+    { id: 3, name: 'Charlie', age: 35 }
+];
+const title = '';
+
+return (
+  <BrowserRouter>
+    <Navbar/>
+      <Routes>
+        <Route path='/emprestimo' element={<Emprestimo/>}/>
+        <Route path='/cliente' element={<Cliente/>}/>
+        <Route path='/equipamento' element={<Equipamento/>}/>
+      </Routes>
+    <Footer/>
+    </BrowserRouter>
+);
 }
 
 export default App;

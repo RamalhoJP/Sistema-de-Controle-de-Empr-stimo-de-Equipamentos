@@ -1,17 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Table from '../../components/Table/Table';
+import { axiosInstance } from '../../api/axiosInstance';
+
 const Equipamento = () => {
-  const headers = ['Id', 'Nome', 'Descrição', 'Status', 'Data de Aquisição' ];
-  const data = [
-      { id: 1, name: 'Betoneira A2', description: 'Betoneira', status: 'Emprestado', aquisitionDate: 'Lavras' },
-      { id: 2, name: 'Andaime V3', description: 'Andaime', status: 'Emprestado', aquisitionDate: 'Lavras' },
-      { id: 3, name: 'Makita A4', description: 'Makita', status: 'Emprestado', aquisitionDate: 'Lavras' }
-  ];
+  const headers = ['id', 'name', 'description', 'status', 'acquisitionDate'];
+
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    axiosInstance.get("http://localhost:8080/equipment")
+      .then((response) => {
+        console.log('Resposta da API:', response.data);
+        const responseData = response.data
+        const dataCleaned = responseData.map((item) => {
+          const { createdAt, updatedAt, ...cleanItem } = item;
+          return cleanItem;
+        });
+
+        setData(dataCleaned);       
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }, []);
+
   const title = 'Equipamento';
 
   return (
     <Table headers={headers} data={data} title={title}></Table>
   );
-  }
-  
-  export default Equipamento;
+}
+
+export default Equipamento;

@@ -1,13 +1,48 @@
 import React, { useEffect, useState } from 'react';
+import Select from 'react-select';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { axiosInstance } from '../../api/axiosInstance';
 
-const Table = ({ headers, fields, data, title, apiEndpoint }) => {
+const TableDropdown = ({ headers, fields, data, title, apiEndpoint }) => {
     const [tableData, setTableData] = useState([]);
     const [newRow, setNewRow] = useState({});
     const [loading, setLoading] = useState(false);
     const [deletedRows, setDeletedRows] = useState([]);
+    const [clients, setClients] = useState([]);
+    const [equipments, setEquipments] = useState([]);
 
     useEffect(() => {
+        axiosInstance.get("http://localhost:8080/person")
+              .then((response) => {
+                const responseData = response.data
+                const dataCleaned = responseData.map((item) => {
+                  const { id, name } = item;
+                  return {
+                    id,
+                    name
+                  };
+                });
+                setClients(dataCleaned);       
+              })
+              .catch((e) => {
+                console.log(e);
+              });
+        axiosInstance.get("http://localhost:8080/equipment")
+              .then((response) => {
+                const responseData = response.data
+                const dataCleaned = responseData.map((item) => {
+                  const { id, name } = item;
+                  return {
+                    id,
+                    name
+                  };
+                });
+                setEquipments(dataCleaned);       
+              })
+              .catch((e) => {
+                console.log(e);
+              });
         setTableData(data);
     }, [data]);
 
@@ -17,13 +52,6 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
 
     const addNewRow = () => {
         if (Object.keys(newRow).length === 0) return;
-        const formattedRow = { ...newRow };
-        headers.forEach((header) => {
-            if (header.includes("Date") && formattedRow[header]) {
-                formattedRow[header] = toISODate(formattedRow[header]);
-                newRow[header] = formattedRow[header];
-            }
-        });
         setTableData([...tableData, newRow]);
         setNewRow({});
     };
@@ -34,40 +62,11 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
         setTableData(updatedData);
     };
 
-    const toISODate = (dateStr) => {
-        const [day, month, year] = dateStr.split('/').map(Number);
-        return new Date(year, month - 1, day).toISOString();
-    };
-
-    const fromISODate = (isoStr) => {
-        const date = new Date(isoStr);
-        return date.toLocaleDateString('pt-BR');
-    };
-
-    const formatItem = (item) => { // Formata o item para enviar para o POST do /person
-        const formattedItem = {
-            name: item.name,
-            phoneNumber: item.phoneNumber,
-            address: {
-                city: item.city,
-                neighborhood: item.neighborhood,
-                zipCode: item.zipCode,
-                street: item.street,
-                number: item.number,
-            }
-        }
-        return formattedItem;
-    };
-
     const handleSave = async () => {
         try {
             setLoading(true);
             for (const item of tableData) {
-                if (!item.id && item.city){ // Ignoramos um item que já possui ID, para não duplicar no BD e testamos pra ver se vai inserir um cliente
-                    const formattedItem = formatItem(item);
-                    console.log(formattedItem)
-                    await axiosInstance.post(apiEndpoint, formattedItem);
-                } else if (!item.id){ // Ignoramos um item que já possui ID, para não duplicar no BD
+                if (!item.id) {
                     await axiosInstance.post(apiEndpoint, item);
                 }
             }
@@ -85,7 +84,7 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
         } finally {
             setLoading(false);
             setDeletedRows([]);
-            window.location.reload(); // Dando reload para não dar erro e tentar deletar o mesmo objeto várias vezes
+            window.location.reload();
         }
     };
 
@@ -105,7 +104,17 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
                     {tableData.map((item, index) => (
                         <tr key={index}>
                             {headers.map((header, i) => (
-                                <td key={i}>{header.includes("Date") ? fromISODate(item[header]) : item[header]}</td>
+                                <td key={i}>
+                                    {header.includes("Date") && item[header]? (    
+                                        new Date(item[header]).toLocaleDateString('pt-BR')
+                                    ) : header === "personId" ? (
+                                        clients.find(client => client.id === item[header])?.name || item[header]
+                                    ) : header === "equipmentId" ? (
+                                        equipments.find(equipment => equipment.id === item[header])?.name || item[header]
+                                    ) : (
+                                        item[header]
+                                    )}
+                                </td>
                             ))}
                             <td>
                                 <button 
@@ -122,6 +131,25 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
                             <td key={i}>
                                 {header === "id" || header === "status" ? (
                                     <span>{newRow[header] || ""}</span>
+                                ) : header.includes("Date") ? (
+                                    <DatePicker 
+                                        selected={newRow[header] ? new Date(newRow[header]) : null}
+                                        onChange={(date) => handleNewRowChange(header, date.toISOString())}
+                                        className="form-control"
+                                        dateFormat="dd/MM/yyyy"
+                                    />
+                                ) : header === "personId" ? (
+                                    <Select
+                                        options={clients.map(client => ({ value: client.id, label: client.name }))}
+                                        onChange={(selectedOption) => handleNewRowChange(header, selectedOption.value)}
+                                        placeholder="Selecione um cliente"
+                                    />
+                                ) : header === "equipmentId" ? (
+                                    <Select
+                                        options={equipments.map(equipment => ({ value: equipment.id, label: equipment.name }))}
+                                        onChange={(selectedOption) => handleNewRowChange(header, selectedOption.value)}
+                                        placeholder="Selecione um equipamento"
+                                    />
                                 ) : (
                                     <input
                                         type="text"
@@ -149,4 +177,4 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
     );
 };
 
-export default Table;
+export default TableDropdown;

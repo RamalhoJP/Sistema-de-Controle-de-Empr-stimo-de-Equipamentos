@@ -26,7 +26,7 @@ const Footer = () => {
       </a>
     </li>
   </ul>
-  <p class="text-center text-muted">© 2021 Company, Inc</p>
+  <p class="text-center text-muted">© 2025 Maxwell Materiais, Inc</p>
 </footer>
 );
   }

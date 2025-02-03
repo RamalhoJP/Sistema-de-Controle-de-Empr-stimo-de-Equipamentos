@@ -83,6 +83,7 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
             console.error('Erro no POST:', error);
         } finally {
             setLoading(false);
+            setDeletedRows([]);
             window.location.reload(); // Dando reload para não dar erro e tentar deletar o mesmo objeto várias vezes
         }
     };

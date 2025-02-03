@@ -3,7 +3,8 @@ import Table from '../../components/Table/Table';
 import { axiosInstance } from '../../api/axiosInstance';
 
 const Cliente = () => {
-  const headers = ['id', 'name', 'phoneNumber', 'addressId'];
+  const headers = ['id', 'name', 'phoneNumber', 'city', 'neighborhood', 'zipCode', 'street', 'number'];
+  const fields = ['Id', 'Nome', 'Número de Contato', 'Cidade', 'Bairro', 'CEP', 'Rua', 'Número Residencial'];
   const apiEndpoint = '/person';
 
   const [data, setData] = useState([]);
@@ -27,7 +28,7 @@ const Cliente = () => {
 
   const title = 'Clientes';
   return (
-    <Table headers={headers} data={data} title={title} apiEndpoint={apiEndpoint}></Table>
+    <Table headers={headers} fields={fields} data={data} title={title} apiEndpoint={apiEndpoint}></Table>
   );
 }
 

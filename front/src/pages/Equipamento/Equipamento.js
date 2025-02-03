@@ -4,6 +4,8 @@ import { axiosInstance } from '../../api/axiosInstance';
 
 const Equipamento = () => {
   const headers = ['id', 'name', 'description', 'status', 'acquisitionDate'];
+  const fields = ['Id', 'Name', 'Descrição', 'Status', 'Data de Aquisição'];
+  const apiEndpoint = '/equipment';
 
   const [data, setData] = useState([]);
 
@@ -27,7 +29,7 @@ const Equipamento = () => {
   const title = 'Equipamento';
 
   return (
-    <Table headers={headers} data={data} title={title}></Table>
+    <Table headers={headers} fields={fields} data={data} title={title} apiEndpoint={apiEndpoint}></Table>
   );
 }
 

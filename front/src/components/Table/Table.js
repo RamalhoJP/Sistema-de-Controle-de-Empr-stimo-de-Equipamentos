@@ -44,11 +44,30 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
         return date.toLocaleDateString('pt-BR');
     };
 
+    const formatItem = (item) => { // Formata o item para enviar para o POST do /person
+        const formattedItem = {
+            name: item.name,
+            phoneNumber: item.phoneNumber,
+            address: {
+                city: item.city,
+                neighborhood: item.neighborhood,
+                zipCode: item.zipCode,
+                street: item.street,
+                number: item.number,
+            }
+        }
+        return formattedItem;
+    };
+
     const handleSave = async () => {
         try {
             setLoading(true);
             for (const item of tableData) {
-                if(!item.id){ // Ignoramos um item que já possui ID, para não duplicar no BD
+                if (!item.id && item.city){ // Ignoramos um item que já possui ID, para não duplicar no BD e testamos pra ver se vai inserir um cliente
+                    const formattedItem = formatItem(item);
+                    console.log(formattedItem)
+                    await axiosInstance.post(apiEndpoint, formattedItem);
+                } else if (!item.id){ // Ignoramos um item que já possui ID, para não duplicar no BD
                     await axiosInstance.post(apiEndpoint, item);
                 }
             }
@@ -64,6 +83,7 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
             console.error('Erro no POST:', error);
         } finally {
             setLoading(false);
+            window.location.reload(); // Dando reload para não dar erro e tentar deletar o mesmo objeto várias vezes
         }
     };
 
@@ -98,7 +118,7 @@ const Table = ({ headers, fields, data, title, apiEndpoint }) => {
                     <tr>
                         {headers.map((header, i) => (
                             <td key={i}>
-                                {header === "id" ? (
+                                {header === "id" || header === "status" ? (
                                     <span>{newRow[header] || ""}</span>
                                 ) : (
                                     <input

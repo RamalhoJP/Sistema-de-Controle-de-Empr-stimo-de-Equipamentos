@@ -15,10 +15,16 @@ const Cliente = () => {
         console.log('Resposta da API:', response.data);
         const responseData = response.data
         const dataCleaned = responseData.map((item) => {
-          const { createdAt, updatedAt, ...cleanItem } = item;
-          return cleanItem;
+          const { createdAt, updatedAt, address, ...cleanItem } = item;
+          return {
+            ...cleanItem,
+            city: address.city,
+            neighborhood: address.neighborhood,
+            zipCode: address.zipCode,
+            street: address.street,
+            number: address.number
+          };
         });
-
         setData(dataCleaned);       
       })
       .catch((e) => {

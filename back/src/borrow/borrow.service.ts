@@ -10,7 +10,6 @@ export class BorrowService {
   async create(createBorrowDto: CreateBorrowDto) {
     try {
       return await this.prisma.$transaction(async prisma => {
-        // Verificar se o equipamento existe
         const equipment = await prisma.equipment.findUnique({
           where: { id: createBorrowDto.equipmentId },
         });
@@ -23,29 +22,28 @@ export class BorrowService {
           throw new BadRequestException("Equipamento já está emprestado.");
         }
 
-        // Atualizar status do equipamento
+        const isReturned = !!createBorrowDto.actualReturnDate;
+        const borrowStatus = isReturned ? "Devolvido" : "EmAndamento";
+        const equipmentStatus = isReturned ? "Disponível" : "Emprestado";
+
         await prisma.equipment.update({
           where: { id: createBorrowDto.equipmentId },
-          data: { status: "Emprestado" },
+          data: { status: equipmentStatus },
         });
 
-        // Criar empréstimo
         return prisma.borrow.create({
           data: {
             ...createBorrowDto,
-            status: "EmAndamento",
+            status: borrowStatus,
           },
-          include: {
-            person: true,
-            equipment: true,
-          },
+          include: { person: true, equipment: true },
         });
       });
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
-        throw error; // Re-lançar as exceções específicas
+        throw error;
       }
-      throw new BadRequestException("Erro ao criar o empréstimo. Verifique os dados fornecidos.");
+      throw new BadRequestException("Erro ao criar o empréstimo.");
     }
   }
 
@@ -82,22 +80,32 @@ export class BorrowService {
 
   async update(id: number, updateBorrowDto: UpdateBorrowDto) {
     try {
-      // Verificar se o empréstimo existe
       const borrow = await this.prisma.borrow.findUnique({ where: { id } });
 
       if (!borrow) {
-        throw new NotFoundException("Empréstimo não encontrado.");
+        throw new NotFoundException("Empréstmo não encontrado.");
       }
 
-      return await this.prisma.borrow.update({
-        where: { id },
-        data: {
-          ...updateBorrowDto,
-        },
-        include: {
-          person: true,
-          equipment: true,
-        },
+      const isReturned = !!updateBorrowDto.actualReturnDate;
+      const borrowStatus = isReturned ? "Devolvido" : borrow.status;
+      const equipmentStatus = isReturned ? "Disponível" : undefined;
+
+      return await this.prisma.$transaction(async prisma => {
+        if (isReturned) {
+          await prisma.equipment.update({
+            where: { id: borrow.equipmentId },
+            data: { status: equipmentStatus },
+          });
+        }
+
+        return prisma.borrow.update({
+          where: { id },
+          data: {
+            ...updateBorrowDto,
+            status: borrowStatus,
+          },
+          include: { person: true, equipment: true },
+        });
       });
     } catch (error) {
       if (error instanceof NotFoundException) {

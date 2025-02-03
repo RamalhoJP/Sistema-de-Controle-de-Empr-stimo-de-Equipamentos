@@ -3,9 +3,10 @@ import { CreateBorrowDto } from "./create-borrow.dto";
 import { BorrowStatus } from "@prisma/client";
 
 export class UpdateBorrowDto extends PartialType(CreateBorrowDto) {
-  personId: number;
-  equipmentId: number;
-  borrowDate: Date;
-  expectedReturnDate: Date;
-  status: BorrowStatus;
+  personId?: number;
+  equipmentId?: number;
+  borrowDate?: Date;
+  expectedReturnDate?: Date;
+  actualReturnDate?: Date;
+  status?: BorrowStatus;
 }

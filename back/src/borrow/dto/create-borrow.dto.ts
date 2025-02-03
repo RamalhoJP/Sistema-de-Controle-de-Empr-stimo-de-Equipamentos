@@ -5,5 +5,6 @@ export class CreateBorrowDto {
   equipmentId: number;
   borrowDate: Date;
   expectedReturnDate: Date;
+  actualReturnDate?: Date;
   status: BorrowStatus;
 }
